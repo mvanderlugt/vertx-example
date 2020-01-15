@@ -1,0 +1,75 @@
+databaseChangeLog:
+  - changeSet:
+      id: create_country
+      author: mark@vanderlugt.us
+      changes:
+        - createTable:
+            tableName: country
+            columns:
+              - column:
+                  name: id
+                  type: char(2)
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: name
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+  - changeSet:
+      id: create_island
+      author: mark@vanderlugt.us
+      changes:
+        - createTable:
+            tableName: island
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: name
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: country
+                  type: char(2)
+                  constraints:
+                    foreignKeyName: fk_island_country
+                    references: country(id)
+                    nullable: false
+  - changeSet:
+      id: load_default_data
+      author: mark@vanderlugt.us
+      changes:
+        - loadData:
+            tableName: country
+            file: db/data/countries.csv
+            commentLineStartsWith: '#'
+            quotchar: '"'
+            separator: ','
+            columns:
+              - column:
+                  name: id
+                  type: string
+              - column:
+                  name: name
+                  type: string
+        - loadData:
+            tableName: island
+            file: db/data/islands.csv
+            commentLineStartsWith: '#'
+            quotchar: '"'
+            separator: ','
+            columns:
+              - column:
+                  name: id
+                  type: string
+              - column:
+                  name: name
+                  type: string
+              - column:
+                  name: country
+                  type: string

@@ -14,8 +14,8 @@ public class MainVerticle extends AbstractVerticle {
     @Override
     public void start(Promise<Void> start) {
         log.debug("Starting main verticle");
-        all(deploy(WebVerticle::new),
-                deploy(RepositoryVerticle::new))
+        all(deploy(RepositoryVerticle::new),
+                deploy(WebVerticle::new))
                 .setHandler(async -> {
                     if (async.succeeded()) {
                         log.debug("Main verticle start complete");
