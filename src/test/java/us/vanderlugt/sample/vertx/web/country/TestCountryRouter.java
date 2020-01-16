@@ -41,7 +41,7 @@ public class TestCountryRouter {
                 id -> future(promise -> client.request(POST, "/api/country")
                         .expect(status(CREATED.getCode()))
                         .as(BodyCodec.json(Country.class))
-                        .sendJson(new Country("BM", "Bermuda"),
+                        .sendJson(new Country("BM", "Bermuda", "Hamilton"),
                                 context.succeeding(response -> {
                                     context.verify(() -> {
                                         Country country = response.body();
@@ -72,7 +72,7 @@ public class TestCountryRouter {
                         client.request(POST, "/api/country")
                                 .expect(status(CREATED.getCode()))
                                 .as(BodyCodec.json(Country.class))
-                                .sendJson(new Country("AR", "Argentina"),
+                                .sendJson(new Country("AR", "Argentina", "Buenos Aires"),
                                         context.succeeding(promise::complete)))
                         .compose(v -> future(
                                 promise -> client.request(GET, "/api/country/AR")
@@ -84,7 +84,7 @@ public class TestCountryRouter {
                                 promise -> client.request(POST, "/api/country")
                                         .expect(status(CONFLICT.getCode()))
                                         .as(BodyCodec.none())
-                                        .sendJson(new Country("AR", "Arkansas"),
+                                        .sendJson(new Country("AR", "Arkansas", "Little Rock"),
                                                 context.succeeding(promise::complete)))
                         )
                         .setHandler(context.succeeding(none ->
@@ -104,7 +104,7 @@ public class TestCountryRouter {
     @Test
     void testGetCountry(Vertx vertx, VertxTestContext context) {
         deployMainVerticle(vertx, context,
-                id -> createCountry(context, new Country("US", "United States"))
+                id -> createCountry(context, new Country("US", "United States", "Washington, D.C."))
                         .setHandler(context.succeeding(none ->
                                 client.request(GET, "/api/country/US")
                                         .expect(status(OK.getCode()))
@@ -131,9 +131,9 @@ public class TestCountryRouter {
     @Test
     void testSearchCountries(Vertx vertx, VertxTestContext context) {
         deployMainVerticle(vertx, context,
-                id -> createCountry(context, new Country("BS", "Bahamas"))
-                        .compose(v -> createCountry(context, new Country("TD", "The Republic of Chad")))
-                        .compose(v -> createCountry(context, new Country("HR", "Croatia")))
+                id -> createCountry(context, new Country("BS", "Bahamas", "Nassau"))
+                        .compose(v -> createCountry(context, new Country("TD", "The Republic of Chad", "N'Djamena")))
+                        .compose(v -> createCountry(context, new Country("HR", "Croatia", "Zagreb")))
                         .setHandler(context.succeeding(r ->
                                 client.request(GET, "/api/country")
                                         .expect(status(OK.getCode()))
@@ -156,7 +156,7 @@ public class TestCountryRouter {
                                     if (response.body() != null) {
                                         promise.complete(response.body().stream()
                                                 .map(JsonObject.class::cast)
-                                                .map(obj -> new Country(obj.getString("id"), obj.getString("name")))
+                                                .map(obj -> new Country(obj.getString("id"), obj.getString("name"), obj.getString("capital", null)))
                                                 .collect(Collectors.toList()));
                                     } else {
                                         promise.complete(Collections.emptyList());
@@ -174,12 +174,12 @@ public class TestCountryRouter {
     @Test
     void testUpdateCountry(Vertx vertx, VertxTestContext context) {
         deployMainVerticle(vertx, context,
-                id -> createCountry(context, new Country("XY", "XYZ"))
+                id -> createCountry(context, new Country("XY", "XYZ", "ABC"))
                         .compose(v -> future(promise ->
                                 client.request(PUT, "/api/country/XY")
                                         .expect(status(OK.getCode()))
                                         .as(BodyCodec.json(Country.class))
-                                        .sendJson(new Country("XY", "Xylophone"),
+                                        .sendJson(new Country("XY", "Xylophone", "Keyboard"),
                                                 context.succeeding(promise::complete))))
                         .setHandler(context.succeeding(result ->
                                 client.request(GET, "/api/country/XY")
@@ -198,7 +198,7 @@ public class TestCountryRouter {
     @Test
     void testDeleteCountry(Vertx vertx, VertxTestContext context) {
         deployMainVerticle(vertx, context,
-                id -> createCountry(context, new Country("BT", "Bhutan"))
+                id -> createCountry(context, new Country("BT", "Bhutan", "Thimphu"))
                         .compose(v -> future(
                                 promise -> client.request(GET, "/api/country/BT")
                                         .expect(status(OK.getCode()))

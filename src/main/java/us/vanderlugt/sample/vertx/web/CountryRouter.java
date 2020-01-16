@@ -15,6 +15,10 @@ import static us.vanderlugt.sample.vertx.web.HttpStatus.*;
 public class CountryRouter {
     public Router routes(Vertx vertx) {
         Router router = Router.router(vertx);
+        router.route("/*").handler(context -> {
+            context.response().putHeader("Content-Type", "application/json; charset=utf-8");
+            context.next();
+        });
         router.post("/country")
                 .handler(BodyHandler.create())
                 .handler(context -> create(vertx, context));
@@ -36,7 +40,6 @@ public class CountryRouter {
                             if (response.succeeded()) {
                                 log.debug("Country successfully created: {}", response.result().body());
                                 context.response()
-                                        .putHeader("Content-Type", "application/json; charset=utf-8")
                                         .setStatusCode(CREATED.getCode())
                                         .end(response.result().body());
                             } else if (response.cause() instanceof ReplyException) {
@@ -57,7 +60,6 @@ public class CountryRouter {
                                 if (message.body() != null) {
                                     context.response()
                                             .setStatusCode(OK.getCode())
-                                            .putHeader("Content-Type", "application/json; charset=utf-8")
                                             .end(message.body());
                                 } else {
                                     context.response()
@@ -80,7 +82,6 @@ public class CountryRouter {
                                 Message<String> message = response.result();
                                 if (message.body() != null) {
                                     context.response()
-                                            .putHeader("Content-Type", "application/json; charset=utf-8")
                                             .setStatusCode(OK.getCode())
                                             .end(message.body());
                                 } else {
@@ -102,7 +103,6 @@ public class CountryRouter {
                             if (response.succeeded()) {
                                 log.debug("Country successfully updated: {}", response.result().body());
                                 context.response()
-                                        .putHeader("Content-Type", "application/json; charset=utf-8")
                                         .setStatusCode(OK.getCode())
                                         .end(response.result().body());
                             } else if (response.cause() instanceof ReplyException) {
@@ -121,7 +121,6 @@ public class CountryRouter {
                             if (response.succeeded()) {
                                 log.debug("Country successfully deleted: {}", response.result().body());
                                 context.response()
-                                        .putHeader("Content-Type", "application/json; charset=utf-8")
                                         .setStatusCode(OK.getCode())
                                         .end(response.result().body());
                             } else if (response.cause() instanceof ReplyException) {
