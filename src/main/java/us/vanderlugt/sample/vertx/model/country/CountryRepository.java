@@ -21,11 +21,12 @@ public class CountryRepository {
 
     public Future<Country> createCountry(Country country) {
         return Future.future(promise -> {
-            String sql = "INSERT INTO country (id, name) " +
-                    "VALUES (?, ?)";
+            String sql = "INSERT INTO country (id, name, capital) " +
+                    "VALUES (?, ?, ?)";
             JsonArray params = new JsonArray()
                     .add(country.getId())
-                    .add(country.getName());
+                    .add(country.getName())
+                    .add(country.getCapital());
             log.debug("Insert sql = {}, params = {}", sql, params);
             client.updateWithParams(sql, params, result -> {
                 if (result.succeeded()) {
@@ -45,7 +46,7 @@ public class CountryRepository {
 
     public Future<Country> getCountry(String id) {
         return Future.future(promise -> {
-            String sql = "SELECT id, name FROM country WHERE id = ?";
+            String sql = "SELECT id, name, capital FROM country WHERE id = ?";
             log.debug("Getting country with id = {}, sql = {}", id, sql);
             JsonArray params = new JsonArray()
                     .add(id);
@@ -73,7 +74,7 @@ public class CountryRepository {
 
     public Future<List<Country>> searchCountries() {
         return Future.future(promise -> {
-            String sql = "SELECT id, name FROM country ORDER BY UPPER(name)";
+            String sql = "SELECT id, name, capital FROM country ORDER BY UPPER(name)";
             log.debug("Searching for countries, sql = {}", sql);
             client.query(sql, response -> {
                 if (response.succeeded()) {
@@ -101,9 +102,11 @@ public class CountryRepository {
                 .compose(existing -> Future.future(promise -> {
                     if (existing != null) {
                         log.debug("Updated country = {}", existing);
-                        String sql = "UPDATE country SET name = ?";
+                        String sql = "UPDATE country SET name = ?, capital = ? WHERE id = ?";
                         JsonArray params = new JsonArray()
-                                .add(update.getName());
+                                .add(update.getName())
+                                .add(update.getCapital())
+                                .add(update.getId());
                         client.updateWithParams(sql, params, result -> {
                             if (result.succeeded()) { //todo do we need to check rows updated?
                                 promise.complete(update);

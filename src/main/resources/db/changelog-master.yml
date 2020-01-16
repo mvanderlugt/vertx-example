@@ -16,27 +16,8 @@ databaseChangeLog:
                   type: varchar(100)
                   constraints:
                     nullable: false
-  - changeSet:
-      id: create_island
-      author: mark@vanderlugt.us
-      changes:
-        - createTable:
-            tableName: island
-            columns:
               - column:
-                  name: id
-                  type: uuid
+                  name: capital
+                  type: varchar(100)
                   constraints:
-                    primaryKey: true
-              - column:
-                  name: name
-                  type: varchar(200)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: country
-                  type: char(2)
-                  constraints:
-                    foreignKeyName: fk_island_country
-                    references: country(id)
                     nullable: false

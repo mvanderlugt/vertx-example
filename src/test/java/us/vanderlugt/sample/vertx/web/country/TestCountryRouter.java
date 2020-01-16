@@ -53,6 +53,7 @@ public class TestCountryRouter {
                                         Country country = response.body();
                                         assertThat(country.getId(), equalTo("BM"));
                                         assertThat(country.getName(), equalTo("Bermuda"));
+                                        assertThat(country.getCapital(), equalTo("Hamilton"));
                                     });
                                     promise.complete();
                                 })))
@@ -65,6 +66,7 @@ public class TestCountryRouter {
                                                         Country country = response.body();
                                                         assertThat(country.getId(), equalTo("BM"));
                                                         assertThat(country.getName(), equalTo("Bermuda"));
+                                                        assertThat(country.getCapital(), equalTo("Hamilton"));
                                                     });
                                                     context.completeNow();
                                                 }
@@ -102,9 +104,26 @@ public class TestCountryRouter {
                                                 Country country = response4.body();
                                                 assertThat(country.getId(), equalTo("AR"));
                                                 assertThat(country.getName(), equalTo("Argentina"));
+                                                assertThat(country.getCapital(), equalTo("Buenos Aires"));
                                             });
                                             context.completeNow();
                                         })))));
+    }
+
+    @Test
+    void testCreateCountryInvalidName(Vertx vertx, VertxTestContext context) throws Exception {
+        deployMain(vertx, context,
+                id -> client.request(POST, "/api/country")
+                        .expect(status(BAD_REQUEST.getCode()))
+                        .as(BodyCodec.jsonObject())
+                        .sendJson(new Country("BM", "", "Hamilton"),
+                                context.succeeding(response -> {
+                                    context.verify(() -> {
+                                        assertThat(response.body().getString("message"),
+                                                equalTo("Country name must be between 1 and 100 characters long"));
+                                    });
+                                    context.completeNow();
+                                })));
     }
 
     @Test
@@ -120,6 +139,7 @@ public class TestCountryRouter {
                                                 Country country = response2.body();
                                                 assertThat(country.getId(), equalTo("US"));
                                                 assertThat(country.getName(), equalTo("United States"));
+                                                assertThat(country.getCapital(), equalTo("Washington, D.C."));
                                             });
                                             context.completeNow();
                                         })))));
@@ -196,6 +216,7 @@ public class TestCountryRouter {
                                                 Country country = response.body();
                                                 assertThat(country.getId(), equalTo("XY"));
                                                 assertThat(country.getName(), equalTo("Xylophone"));
+                                                assertThat(country.getCapital(), equalTo("Keyboard"));
                                             });
                                             context.completeNow();
                                         })))));
@@ -220,6 +241,7 @@ public class TestCountryRouter {
                                                 Country country = response.body();
                                                 assertThat(country.getId(), equalTo("BT"));
                                                 assertThat(country.getName(), equalTo("Bhutan"));
+                                                assertThat(country.getCapital(), equalTo("Thimphu"));
                                             });
                                             promise.complete();
                                         }))
@@ -243,7 +265,6 @@ public class TestCountryRouter {
     private void deployMain(Vertx vertx, VertxTestContext context, Handler<String> handler) throws Exception {
         vertx.deployVerticle(MainVerticle::new, getTestDeploymentOptions(port), context.succeeding(handler));
     }
-
 
     private Future<Object> createCountry(VertxTestContext context, Country country) {
         return future(promise -> {
