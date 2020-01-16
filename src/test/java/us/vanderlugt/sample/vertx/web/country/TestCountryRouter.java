@@ -3,14 +3,16 @@ package us.vanderlugt.sample.vertx.web.country;
 import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.codec.BodyCodec;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import us.vanderlugt.sample.vertx.MainVerticle;
+import us.vanderlugt.sample.vertx.TestMainVerticle;
 import us.vanderlugt.sample.vertx.model.country.Country;
 
 import java.util.Collections;
@@ -23,21 +25,25 @@ import static io.vertx.ext.web.client.predicate.ResponsePredicate.status;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static us.vanderlugt.sample.vertx.TestMainVerticle.getTestDeploymentOptions;
 import static us.vanderlugt.sample.vertx.web.HttpStatus.*;
-import static us.vanderlugt.sample.vertx.web.TestWebVerticle.WEB_CLIENT_OPTIONS;
 
 @ExtendWith(VertxExtension.class)
 public class TestCountryRouter {
-    private static WebClient client;
+    private Integer port;
+    private WebClient client;
 
-    @BeforeAll
-    static void initialize(Vertx vertx) {
-        client = WebClient.create(vertx, WEB_CLIENT_OPTIONS);
+    @BeforeEach
+    void initialize(Vertx vertx) throws Exception {
+        port = TestMainVerticle.randomPort();
+        client = WebClient.create(vertx, new WebClientOptions()
+                .setDefaultHost("localhost")
+                .setDefaultPort(port));
     }
 
     @Test
-    void testCreateCountry(Vertx vertx, VertxTestContext context) {
-        deployMainVerticle(vertx, context,
+    void testCreateCountry(Vertx vertx, VertxTestContext context) throws Exception {
+        deployMain(vertx, context,
                 id -> future(promise -> client.request(POST, "/api/country")
                         .expect(status(CREATED.getCode()))
                         .as(BodyCodec.json(Country.class))
@@ -66,8 +72,8 @@ public class TestCountryRouter {
     }
 
     @Test
-    void testCreateDuplicateCountryId(Vertx vertx, VertxTestContext context) {
-        deployMainVerticle(vertx, context,
+    void testCreateDuplicateCountryId(Vertx vertx, VertxTestContext context) throws Exception {
+        deployMain(vertx, context,
                 id -> future(promise ->
                         client.request(POST, "/api/country")
                                 .expect(status(CREATED.getCode()))
@@ -102,8 +108,8 @@ public class TestCountryRouter {
     }
 
     @Test
-    void testGetCountry(Vertx vertx, VertxTestContext context) {
-        deployMainVerticle(vertx, context,
+    void testGetCountry(Vertx vertx, VertxTestContext context) throws Exception {
+        deployMain(vertx, context,
                 id -> createCountry(context, new Country("US", "United States", "Washington, D.C."))
                         .setHandler(context.succeeding(none ->
                                 client.request(GET, "/api/country/US")
@@ -120,8 +126,8 @@ public class TestCountryRouter {
     }
 
     @Test
-    void getGetCountryNotFound(Vertx vertx, VertxTestContext context) {
-        deployMainVerticle(vertx, context,
+    void getGetCountryNotFound(Vertx vertx, VertxTestContext context) throws Exception {
+        deployMain(vertx, context,
                 id -> client.request(GET, "/api/country/ZZ")
                         .expect(status(NOT_FOUND.getCode()))
                         .as(BodyCodec.none())
@@ -129,8 +135,8 @@ public class TestCountryRouter {
     }
 
     @Test
-    void testSearchCountries(Vertx vertx, VertxTestContext context) {
-        deployMainVerticle(vertx, context,
+    void testSearchCountries(Vertx vertx, VertxTestContext context) throws Exception {
+        deployMain(vertx, context,
                 id -> createCountry(context, new Country("BS", "Bahamas", "Nassau"))
                         .compose(v -> createCountry(context, new Country("TD", "The Republic of Chad", "N'Djamena")))
                         .compose(v -> createCountry(context, new Country("HR", "Croatia", "Zagreb")))
@@ -147,8 +153,8 @@ public class TestCountryRouter {
     }
 
     @Test
-    void testSearchCountriesNotFound(Vertx vertx, VertxTestContext context) {
-        deployMainVerticle(vertx, context,
+    void testSearchCountriesNotFound(Vertx vertx, VertxTestContext context) throws Exception {
+        deployMain(vertx, context,
                 id -> future((Promise<List<Country>> promise) ->
                         client.request(GET, "/api/country")
                                 .as(BodyCodec.jsonArray())
@@ -172,14 +178,14 @@ public class TestCountryRouter {
     }
 
     @Test
-    void testUpdateCountry(Vertx vertx, VertxTestContext context) {
-        deployMainVerticle(vertx, context,
+    void testUpdateCountry(Vertx vertx, VertxTestContext context) throws Exception {
+        deployMain(vertx, context,
                 id -> createCountry(context, new Country("XY", "XYZ", "ABC"))
                         .compose(v -> future(promise ->
                                 client.request(PUT, "/api/country/XY")
                                         .expect(status(OK.getCode()))
                                         .as(BodyCodec.json(Country.class))
-                                        .sendJson(new Country("XY", "Xylophone", "Keyboard"),
+                                        .sendJson(new Country(null, "Xylophone", "Keyboard"),
                                                 context.succeeding(promise::complete))))
                         .setHandler(context.succeeding(result ->
                                 client.request(GET, "/api/country/XY")
@@ -196,8 +202,8 @@ public class TestCountryRouter {
     }
 
     @Test
-    void testDeleteCountry(Vertx vertx, VertxTestContext context) {
-        deployMainVerticle(vertx, context,
+    void testDeleteCountry(Vertx vertx, VertxTestContext context) throws Exception {
+        deployMain(vertx, context,
                 id -> createCountry(context, new Country("BT", "Bhutan", "Thimphu"))
                         .compose(v -> future(
                                 promise -> client.request(GET, "/api/country/BT")
@@ -226,19 +232,18 @@ public class TestCountryRouter {
     }
 
     @Test
-    void deleteCountryThatDoesNotExist(Vertx vertx, VertxTestContext context) {
-        deployMainVerticle(vertx, context,
+    void deleteCountryThatDoesNotExist(Vertx vertx, VertxTestContext context) throws Exception {
+        deployMain(vertx, context,
                 id -> client.request(DELETE, "/api/country/ZZ")
                         .expect(status(NOT_FOUND.getCode()))
                         .as(BodyCodec.none())
                         .send(context.succeeding(response -> context.completeNow())));
     }
 
-    private void deployMainVerticle(Vertx vertx, VertxTestContext context, Handler<String> handler) {
-        vertx.deployVerticle(MainVerticle::new,
-                new DeploymentOptions(),
-                context.succeeding(handler));
+    private void deployMain(Vertx vertx, VertxTestContext context, Handler<String> handler) throws Exception {
+        vertx.deployVerticle(MainVerticle::new, getTestDeploymentOptions(port), context.succeeding(handler));
     }
+
 
     private Future<Object> createCountry(VertxTestContext context, Country country) {
         return future(promise -> {

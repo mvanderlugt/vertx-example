@@ -29,8 +29,8 @@ public class MainVerticle extends AbstractVerticle {
 
     private Future<String> deploy(Supplier<Verticle> supplier) {
         final Promise<String> promise = Promise.promise();
-        final DeploymentOptions options = new DeploymentOptions();
-
+        final DeploymentOptions options = new DeploymentOptions()
+                .setConfig(config());
         vertx.deployVerticle(supplier, options, promise);
 
         return promise.future();

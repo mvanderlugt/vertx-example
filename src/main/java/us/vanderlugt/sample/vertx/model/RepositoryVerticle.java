@@ -18,25 +18,12 @@ import java.util.function.Supplier;
 
 @Slf4j
 public class RepositoryVerticle extends AbstractVerticle {
-    //todo externalize
-    public static final DatabaseConfig DATABASE_CONFIG = DatabaseConfig.builder()
-            .url("jdbc:h2:mem:test")
-            .driverClass("org.h2.Driver")
-            .build();
-
-    @Data
-    @Builder
-    private static class DatabaseConfig {
-        @JsonProperty("url")
-        private String url;
-        @JsonProperty("driver_class")
-        private String driverClass;
-    }
-
     @Override
     public void start(Promise<Void> start) {
         log.debug("Starting Repository verticle");
-        JDBCClient client = JDBCClient.createShared(vertx, JsonObject.mapFrom(DATABASE_CONFIG));
+        JDBCClient client = JDBCClient.createShared(vertx, new JsonObject()
+                .put("url", config().getValue("jdbc.url", "jdbc:h2:./database/test"))
+                .put("driver_class", config().getValue("jdbc.driver_class", "org.h2.Driver")));
         client.getConnection(connect -> {
             if (connect.succeeded()) {
                 try (SQLConnection connection = connect.result()) {
@@ -71,6 +58,7 @@ public class RepositoryVerticle extends AbstractVerticle {
     private Future<String> deploy(Supplier<Verticle> supplier) {
         final Promise<String> promise = Promise.promise();
         final DeploymentOptions options = new DeploymentOptions()
+                .setConfig(config())
                 .setWorker(true);
 
         vertx.deployVerticle(supplier, options, promise);

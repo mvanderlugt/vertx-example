@@ -4,10 +4,12 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.ReplyException;
+import io.vertx.core.json.Json;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 import lombok.extern.slf4j.Slf4j;
+import us.vanderlugt.sample.vertx.model.country.Country;
 
 import static us.vanderlugt.sample.vertx.web.HttpStatus.*;
 
@@ -96,9 +98,11 @@ public class CountryRouter {
     }
 
     private void update(Vertx vertx, RoutingContext context) {
+        Country country = Json.decodeValue(context.getBodyAsString(), Country.class);
+        country.setId(context.pathParam("id"));
         vertx.eventBus()
                 .request("us.vanderlugt.country.update",
-                        context.getBodyAsString(),
+                        Json.encode(country),
                         (AsyncResult<Message<String>> response) -> {
                             if (response.succeeded()) {
                                 log.debug("Country successfully updated: {}", response.result().body());
