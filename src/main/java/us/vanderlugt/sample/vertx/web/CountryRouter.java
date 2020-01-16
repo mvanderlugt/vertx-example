@@ -15,30 +15,32 @@ import static us.vanderlugt.sample.vertx.web.HttpStatus.*;
 public class CountryRouter {
     public Router routes(Vertx vertx) {
         Router router = Router.router(vertx);
-        router.get("/country").handler(context -> search(vertx, context));
-        router.get("/country/:id").handler(context -> get(vertx, context));
         router.post("/country")
                 .handler(BodyHandler.create())
-                .handler(context -> requestNewCountry(vertx, context));
+                .handler(context -> create(vertx, context));
+        router.get("/country/:id").handler(context -> get(vertx, context));
+        router.get("/country").handler(context -> search(vertx, context));
+        router.put("/country/:id")
+                .handler(BodyHandler.create())
+                .handler(context -> update(vertx, context));
+        router.delete("/country/:id")
+                .handler(context -> deleteCountry(vertx, context));
         return router;
     }
 
-    private void search(Vertx vertx, RoutingContext context) {
+    private void create(Vertx vertx, RoutingContext context) {
         vertx.eventBus()
-                .request("us.vanderlugt.country.search", null,
+                .request("us.vanderlugt.country.create",
+                        context.getBodyAsString(),
                         (AsyncResult<Message<String>> response) -> {
                             if (response.succeeded()) {
-                                Message<String> message = response.result();
-                                if (message.body() != null) {
-                                    context.response()
-                                            .putHeader("Content-Type", "application/json; charset=utf-8")
-                                            .setStatusCode(OK.getCode())
-                                            .end(message.body());
-                                } else {
-                                    context.response()
-                                            .setStatusCode(NO_CONTENT.getCode())
-                                            .end();
-                                }
+                                log.debug("Country successfully created: {}", response.result().body());
+                                context.response()
+                                        .putHeader("Content-Type", "application/json; charset=utf-8")
+                                        .setStatusCode(CREATED.getCode())
+                                        .end(response.result().body());
+                            } else if (response.cause() instanceof ReplyException) {
+                                handleReplyException(context, (ReplyException) response.cause());
                             } else {
                                 handleUnexpectedException(context, response.cause());
                             }
@@ -70,16 +72,57 @@ public class CountryRouter {
                         });
     }
 
-    private void requestNewCountry(Vertx vertx, RoutingContext context) {
+    private void search(Vertx vertx, RoutingContext context) {
         vertx.eventBus()
-                .request("us.vanderlugt.country.create",
+                .request("us.vanderlugt.country.search", null,
+                        (AsyncResult<Message<String>> response) -> {
+                            if (response.succeeded()) {
+                                Message<String> message = response.result();
+                                if (message.body() != null) {
+                                    context.response()
+                                            .putHeader("Content-Type", "application/json; charset=utf-8")
+                                            .setStatusCode(OK.getCode())
+                                            .end(message.body());
+                                } else {
+                                    context.response()
+                                            .setStatusCode(NO_CONTENT.getCode())
+                                            .end();
+                                }
+                            } else {
+                                handleUnexpectedException(context, response.cause());
+                            }
+                        });
+    }
+
+    private void update(Vertx vertx, RoutingContext context) {
+        vertx.eventBus()
+                .request("us.vanderlugt.country.update",
                         context.getBodyAsString(),
                         (AsyncResult<Message<String>> response) -> {
                             if (response.succeeded()) {
-                                log.debug("Country successfully created: {}", response.result().body());
+                                log.debug("Country successfully updated: {}", response.result().body());
                                 context.response()
                                         .putHeader("Content-Type", "application/json; charset=utf-8")
-                                        .setStatusCode(CREATED.getCode())
+                                        .setStatusCode(OK.getCode())
+                                        .end(response.result().body());
+                            } else if (response.cause() instanceof ReplyException) {
+                                handleReplyException(context, (ReplyException) response.cause());
+                            } else {
+                                handleUnexpectedException(context, response.cause());
+                            }
+                        });
+    }
+
+    private void deleteCountry(Vertx vertx, RoutingContext context) {
+        vertx.eventBus()
+                .request("us.vanderlugt.country.delete",
+                        context.pathParam("id"),
+                        (AsyncResult<Message<String>> response) -> {
+                            if (response.succeeded()) {
+                                log.debug("Country successfully deleted: {}", response.result().body());
+                                context.response()
+                                        .putHeader("Content-Type", "application/json; charset=utf-8")
+                                        .setStatusCode(OK.getCode())
                                         .end(response.result().body());
                             } else if (response.cause() instanceof ReplyException) {
                                 handleReplyException(context, (ReplyException) response.cause());

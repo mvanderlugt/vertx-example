@@ -16,8 +16,6 @@ import us.vanderlugt.sample.vertx.model.country.CountryVerticle;
 
 import java.util.function.Supplier;
 
-import static io.vertx.core.CompositeFuture.all;
-
 @Slf4j
 public class RepositoryVerticle extends AbstractVerticle {
     //todo externalize
@@ -44,8 +42,7 @@ public class RepositoryVerticle extends AbstractVerticle {
                 try (SQLConnection connection = connect.result()) {
                     runLiquibaseMigration(connection);
                     //todo add DB management routes
-                    all(deploy(() -> new CountryVerticle(client)),
-                            deploy(IslandVerticle::new))
+                    deploy(() -> new CountryVerticle(client))
                             .setHandler(async -> {
                                 if (async.succeeded()) {
                                     log.debug("Repository verticle started");

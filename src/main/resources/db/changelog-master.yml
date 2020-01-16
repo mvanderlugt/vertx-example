@@ -40,36 +40,3 @@ databaseChangeLog:
                     foreignKeyName: fk_island_country
                     references: country(id)
                     nullable: false
-  - changeSet:
-      id: load_default_data
-      author: mark@vanderlugt.us
-      changes:
-        - loadData:
-            tableName: country
-            file: db/data/countries.csv
-            commentLineStartsWith: '#'
-            quotchar: '"'
-            separator: ','
-            columns:
-              - column:
-                  name: id
-                  type: string
-              - column:
-                  name: name
-                  type: string
-        - loadData:
-            tableName: island
-            file: db/data/islands.csv
-            commentLineStartsWith: '#'
-            quotchar: '"'
-            separator: ','
-            columns:
-              - column:
-                  name: id
-                  type: string
-              - column:
-                  name: name
-                  type: string
-              - column:
-                  name: country
-                  type: string
