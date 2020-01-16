@@ -42,7 +42,7 @@ public class CountryRouter {
                 .handler(BodyHandler.create())
                 .handler(HTTPRequestValidationHandler.create()
                         .addPathParamWithPattern("id", "[A-Z]{2}")
-                        .addCustomValidatorFunction(context -> validateCountry(context, true)))
+                        .addCustomValidatorFunction(context -> validateCountry(context, false)))
                 .handler(context -> update(vertx, context))
                 .failureHandler(this::validationErrorHandler);
         router.delete("/country/:id")
@@ -67,15 +67,21 @@ public class CountryRouter {
         Country country = Json.decodeValue(context.getBodyAsString(), Country.class);
         if (requireId && country.getId() == null) {
             throw new ValidationException("Country ID is required");
-        } else if (country.getId().length() != 2) {
-            throw new ValidationException("Country ID must be exactly 2 characters long, refer to ISO-3166");
-        } else if (!country.getId().matches("[A-Z]{2}")) {
-            throw new ValidationException("Country ID must match pattern [A-Z]{2}");
-        } else if (country.getName() == null) {
+        } else if (country.getId() != null) {
+            if (country.getId().length() != 2) {
+                throw new ValidationException("Country ID must be exactly 2 characters long, refer to ISO-3166");
+            } else if (!country.getId().matches("[A-Z]{2}")) {
+                throw new ValidationException("Country ID must match pattern [A-Z]{2}");
+            }
+        }
+
+        if (country.getName() == null) {
             throw new ValidationException("Country name is required", JSON_INVALID);
         } else if (country.getName().length() < 1 || country.getName().length() > 100) {
             throw new ValidationException("Country name must be between 1 and 100 characters long", JSON_INVALID);
-        } else if (country.getCapital() == null) {
+        }
+
+        if (country.getCapital() == null) {
             throw new ValidationException("Country capital is required", JSON_INVALID);
         } else if (country.getCapital().length() < 1 || country.getCapital().length() > 100) {
             throw new ValidationException("Country capital must be between 1 and 100 characters long", JSON_INVALID);
